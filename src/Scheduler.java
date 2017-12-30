@@ -21,8 +21,8 @@ public class Scheduler {
     int total_vertex_num = readconf.getVertexNumber();
     first_message = 1;
 
-    dgps.SchedulerMessageQueue scheduler_message_queue = new dgps.SchedulerMessageQueue();
-    dgps.SchedulerMessageQueue scheduler_message_queue_worker = new dgps.SchedulerMessageQueue();
+    dgps.MessageQueue scheduler_message_queue = new dgps.MessageQueue();
+    dgps.MessageQueue scheduler_message_queue_worker = new dgps.MessageQueue();
 
     worker_load = new int [worker_num+1]; //Record load(task count) for each worker
     worker_vertex_data  = new int [worker_num+1][total_vertex_num+1]; //The data that each worker has
@@ -46,7 +46,7 @@ class ReceiveMessage implements Runnable {
   Channel channel;
   dgps.ReadConf readconf;
   dgps.Logger logger;
-  dgps.SchedulerMessageQueue scheduler_message_queue;
+  dgps.MessageQueue scheduler_message_queue;
   //private static MyTask scheduler_task;
   private static Scheduler scheduler;
   
@@ -55,7 +55,7 @@ class ReceiveMessage implements Runnable {
   //profile
   long split_time = 0;
   int count = 0;
-  public ReceiveMessage(dgps.ReadConf readconf, dgps.Logger logger, dgps.SchedulerMessageQueue scheduler_message_queue)throws Exception{
+  public ReceiveMessage(dgps.ReadConf readconf, dgps.Logger logger, dgps.MessageQueue scheduler_message_queue)throws Exception{
     this.scheduler = new Scheduler();
     this.readconf = readconf;
     this.worker_num = readconf.getWorkerCount();
@@ -131,11 +131,11 @@ class ReceiveMessage implements Runnable {
 };
 class MyTask implements Runnable {
   private static Scheduler scheduler;
-  dgps.SchedulerMessageQueue scheduler_message_queue;
-  dgps.SchedulerMessageQueue scheduler_message_queue_worker;
+  dgps.MessageQueue scheduler_message_queue;
+  dgps.MessageQueue scheduler_message_queue_worker;
   int worker_num;
   int worker_has_data []; 
-  public MyTask(int worker_num, dgps.SchedulerMessageQueue scheduler_message_queue, dgps.SchedulerMessageQueue scheduler_message_queue_worker)throws Exception{
+  public MyTask(int worker_num, dgps.MessageQueue scheduler_message_queue, dgps.MessageQueue scheduler_message_queue_worker)throws Exception{
     scheduler = new Scheduler();
     this.scheduler_message_queue = scheduler_message_queue;
     this.scheduler_message_queue_worker = scheduler_message_queue_worker;
@@ -265,7 +265,7 @@ class SchedulerSendToWorker implements Runnable{
   private int batch_size;
   private int total_vertex_num;
   int worker_num;
-  dgps.SchedulerMessageQueue scheduler_message_queue_worker;
+  dgps.MessageQueue scheduler_message_queue_worker;
 
   String message_batch_worker [];
   String message_batch_tracker [];
@@ -282,7 +282,7 @@ class SchedulerSendToWorker implements Runnable{
   Connection[] connection_worker;
   Channel[] channel_worker;
 
-  public SchedulerSendToWorker(dgps.ReadConf readconf, dgps.Logger logger, dgps.SchedulerMessageQueue scheduler_message_queue_worker)throws Exception{
+  public SchedulerSendToWorker(dgps.ReadConf readconf, dgps.Logger logger, dgps.MessageQueue scheduler_message_queue_worker)throws Exception{
     this.readconf = readconf;
     this.logger = logger;
     this.scheduler_message_queue_worker = scheduler_message_queue_worker;

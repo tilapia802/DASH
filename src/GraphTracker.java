@@ -16,7 +16,7 @@ public class GraphTracker {
   public static void main(String[] argv) throws Exception {
     dgps.ReadConf readconf = new dgps.ReadConf();
     dgps.Logger logger = new dgps.Logger(readconf.getLogDirectory() + "GraphTracker_log");
-    dgps.GraphTrackerMessageQueue graphtracker_message_queue = new dgps.GraphTrackerMessageQueue();
+    dgps.MessageQueue graphtracker_message_queue = new dgps.MessageQueue();
     
     logger.log("Start initial graph");
     /* Read graph topology from input file */
@@ -81,7 +81,7 @@ class GraphTrackerTask implements Runnable {
   private static final String EXCHANGE_NAME = "Tracker_directTOworker";
   dgps.ReadConf readconf;
   dgps.Logger logger;
-  dgps.GraphTrackerMessageQueue graphtracker_message_queue;
+  dgps.MessageQueue graphtracker_message_queue;
   String[] graph_table;
   private GraphTracker graphtracker;
   
@@ -89,7 +89,7 @@ class GraphTrackerTask implements Runnable {
   Connection[] connection_worker;
   Channel[] channel_worker;
 
-  public GraphTrackerTask(dgps.ReadConf readconf, dgps.Logger logger, dgps.GraphTrackerMessageQueue graphtracker_message_queue, String[] graph_table)throws Exception{
+  public GraphTrackerTask(dgps.ReadConf readconf, dgps.Logger logger, dgps.MessageQueue graphtracker_message_queue, String[] graph_table)throws Exception{
     graphtracker = new GraphTracker();
     this.readconf = readconf;
     this.logger = logger;
@@ -197,8 +197,8 @@ class GraphTrackerReceiveMessage implements Runnable {
   Channel channel;
   dgps.ReadConf readconf;
   dgps.Logger logger;
-  dgps.GraphTrackerMessageQueue graphtracker_message_queue;
-  public GraphTrackerReceiveMessage(dgps.ReadConf readconf, dgps.Logger logger, dgps.GraphTrackerMessageQueue graphtracker_message_queue)throws Exception{
+  dgps.MessageQueue graphtracker_message_queue;
+  public GraphTrackerReceiveMessage(dgps.ReadConf readconf, dgps.Logger logger, dgps.MessageQueue graphtracker_message_queue)throws Exception{
     this.readconf = readconf;
     this.logger = logger;
     this.graphtracker_message_queue = graphtracker_message_queue;

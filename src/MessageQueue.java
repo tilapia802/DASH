@@ -1,24 +1,22 @@
 package dgps;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 
-public class GraphTrackerMessageQueue{
+public class MessageQueue{
 	private ConcurrentLinkedQueue<String> queue; 
-	//private LinkedBlockingQueue<String> queue;
-	public GraphTrackerMessageQueue(){
+	public MessageQueue(){
 		this.queue = new ConcurrentLinkedQueue<String>();
 	}
 	public int getQueueSize(){
 		return this.queue.size();
 	}
-	public synchronized void pushToQueue(String message){
-		//synchronized(this.queue){
+	public void pushToQueue(String message){
+		synchronized(queue){
 			this.queue.offer(message);
-		//}
+		}
 	}
 	public String popFromQueue(){
-		synchronized(this.queue){
-    		if(!this.queue.isEmpty()){
+		synchronized(queue){
+    		if(!queue.isEmpty()){
        			return this.queue.poll();
     		}
 			else
