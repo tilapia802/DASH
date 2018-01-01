@@ -10,12 +10,14 @@ public class Scheduler {
 
   private static final String TASK_QUEUE_NAME = "schedule_queue";
   private static final String EXCHANGE_NAME = "directTOworker";
-  public static int worker_load [];
-  public static int worker_vertex_data [][];
+  //public static int worker_load [];
+  //public static int worker_vertex_data [][];
   public static int first_message;
   public static void main(String[] argv) throws Exception {
     dgps.ReadConf readconf = new dgps.ReadConf();
     dgps.Logger logger = new dgps.Logger(readconf.getLogDirectory()+"Scheduler_log");
+    dgps.GraphDataRecord graph_data_record = new dgps.GraphDataRecord(); 
+    graph_data_record.initData();
     int batch_size = readconf.getBatchSize();
     int worker_num = readconf.getWorkerCount();
     int total_vertex_num = readconf.getVertexNumber();
@@ -24,13 +26,13 @@ public class Scheduler {
     dgps.MessageQueue scheduler_message_queue = new dgps.MessageQueue();
     dgps.MessageQueue scheduler_message_queue_worker = new dgps.MessageQueue();
 
-    worker_load = new int [worker_num+1]; //Record load(task count) for each worker
-    worker_vertex_data  = new int [worker_num+1][total_vertex_num+1]; //The data that each worker has
+    //worker_load = new int [worker_num+1]; //Record load(task count) for each worker
+    //worker_vertex_data  = new int [worker_num+1][total_vertex_num+1]; //The data that each worker has
 
     ExecutorService executor = Executors.newFixedThreadPool(5);
     executor.submit(new ReceiveMessage(readconf, logger, scheduler_message_queue));
-    executor.submit(new MyTask(worker_num, scheduler_message_queue, scheduler_message_queue_worker));
-    executor.submit(new MyTask(worker_num, scheduler_message_queue, scheduler_message_queue_worker));
+    executor.submit(new MyTask(worker_num, scheduler_message_queue, scheduler_message_queue_worker, graph_data_record));
+    executor.submit(new MyTask(worker_num, scheduler_message_queue, scheduler_message_queue_worker, graph_data_record));
     executor.submit(new SchedulerSendToWorker(readconf, logger, scheduler_message_queue_worker));
     //executor.submit(new MyTask(readconf, logger, scheduler_message_queue));
     
@@ -53,7 +55,6 @@ class ReceiveMessage implements Runnable {
   int first_message = 0;
   int worker_num = 0;
   //profile
-  long split_time = 0;
   int count = 0;
   public ReceiveMessage(dgps.ReadConf readconf, dgps.Logger logger, dgps.MessageQueue scheduler_message_queue)throws Exception{
     this.scheduler = new Scheduler();
@@ -80,7 +81,6 @@ class ReceiveMessage implements Runnable {
       public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
         String message = new String(body, "UTF-8");
         //System.out.println("receive message " + message);
-        //long split_time_start = System.currentTimeMillis();
         //count = count + 1;
         //System.out.println(count);
         String [] message_split = message.split(";");
@@ -99,21 +99,8 @@ class ReceiveMessage implements Runnable {
               //message_split[i] = 1(task vertex) 20(new shortest weight) time algo NEW
 
               scheduler_message_queue.pushToQueue(message_split[i]);
-
-              /*String single_message_split[] = message_split[i].split(" "); 
-              String out_vertex = single_message_split[1]; //2,3,4
-              String out_vertex_split[] = out_vertex.split(",");
-              for (int j=0;j<out_vertex_split.length;j++){
-                String message_task = single_message_split[0] + " " + out_vertex_split[j] + "," + " " + single_message_split[2] + " " + single_message_split[3];
-                //message_task = 1 2, time algo
-                scheduler_message_queue.pushToQueue(message_task);
-                //System.out.println("Push " + message_task);
-              }*/
-            }
-            
+            }          
           }
-          //split_time = split_time + System.currentTimeMillis() - split_time_start;
-          //System.out.println(split_time);
         }
         finally {
           channel.basicAck(envelope.getDeliveryTag(), false);
@@ -133,12 +120,14 @@ class MyTask implements Runnable {
   private static Scheduler scheduler;
   dgps.MessageQueue scheduler_message_queue;
   dgps.MessageQueue scheduler_message_queue_worker;
+  dgps.GraphDataRecord graph_data_record;
   int worker_num;
   int worker_has_data []; 
-  public MyTask(int worker_num, dgps.MessageQueue scheduler_message_queue, dgps.MessageQueue scheduler_message_queue_worker)throws Exception{
+  public MyTask(int worker_num, dgps.MessageQueue scheduler_message_queue, dgps.MessageQueue scheduler_message_queue_worker, dgps.GraphDataRecord graph_data_record)throws Exception{
     scheduler = new Scheduler();
     this.scheduler_message_queue = scheduler_message_queue;
     this.scheduler_message_queue_worker = scheduler_message_queue_worker;
+    this.graph_data_record = graph_data_record;
     this.worker_num = worker_num;
     this.worker_has_data = new int [worker_num+1];
   }
@@ -152,16 +141,9 @@ class MyTask implements Runnable {
       /* Got message */
       if (!message.equals("NULL")){
         //System.out.println("get message " + message);
-        if(scheduler.first_message!=1){
-          /* Decide which worker ID to assign task according to scheduler policy */
-          info_str = SchedulerPolicy(message);
-          scheduler_message_queue_worker.pushToQueue(message + info_str);
-        }
-        else{
-          //System.out.println("receive first message");
-          scheduler_message_queue_worker.pushToQueue(message + " 1 0");
-          scheduler.first_message = 0;
-        }
+        /* Decide which worker ID to assign task according to scheduler policy */
+        info_str = SchedulerPolicy(message);
+        scheduler_message_queue_worker.pushToQueue(message + info_str);
       }
     }  
   }
@@ -179,23 +161,17 @@ class MyTask implements Runnable {
 
     /* Check which worker has this vertex data according to worker_vertex_data array */
     for(int i=1;i<=worker_num;i++){
-      synchronized(scheduler.worker_vertex_data){
-        if(scheduler.worker_vertex_data[i][vertex] == 1){
-          worker_has_data[count] = i;
-          count = count + 1;
-        }
+      if(graph_data_record.hasData(i,vertex) == 1){
+        worker_has_data[count] = i;
+        count = count + 1;
       }
     }
-
+    
     if (count == 1){ //Only one worker has data
       workerID = worker_has_data[0];
       worker_has_data[0] = 0;
-      synchronized(scheduler.worker_load){ //Record the task load of each workers
-        scheduler.worker_load[workerID] = scheduler.worker_load[workerID] + 1; 
-      }
-      synchronized(scheduler.worker_vertex_data){ //Record that this worker will has data
-        scheduler.worker_vertex_data[workerID][vertex] = 1;
-      }
+      graph_data_record.addOneWorkerLoad(workerID);
+      graph_data_record.setData(workerID, vertex);
       info_str = info_str + " " + workerID + " 1" ; //Worker has data, don't need to send subgraph request 
       return info_str;
     }
@@ -203,19 +179,15 @@ class MyTask implements Runnable {
       workerID = 1; //Start from worker 1 to check work load later
       /* Find the workerID with less work load */
       for(int i=1;i<worker_num;i++){
-        synchronized(scheduler.worker_load){
-          if (scheduler.worker_load[i+1] < scheduler.worker_load[i])
-            workerID = i+1;
+        if (graph_data_record.getWorkerLoad(i+1) < graph_data_record.getWorkerLoad(i)){
+          workerID = i+1;
         }
       }
       /* After deciding workerID, we have to update its load and responsible vertex array, too */
-      synchronized(scheduler.worker_load){
-        scheduler.worker_load[workerID] = scheduler.worker_load[workerID] + 1; 
-      }
+      graph_data_record.addOneWorkerLoad(workerID);
+
       if(count == 0){
-        synchronized(scheduler.worker_vertex_data){
-          scheduler.worker_vertex_data[workerID][vertex] = 1;
-        }
+        graph_data_record.setData(workerID, vertex);
       }
       else{
         //Re initial worker_has_data
@@ -235,22 +207,16 @@ class MyTask implements Runnable {
       workerID = worker_has_data[0];
       for(int i=0;i<worker_num-1;i++){
         if(worker_has_data[i]!=0){
-          synchronized(scheduler.worker_load){
-            if (scheduler.worker_load[worker_has_data[i]] < scheduler.worker_load[worker_has_data[i+1]]){
-              workerID = worker_has_data[i];
-            }
+          if (graph_data_record.getWorkerLoad(worker_has_data[i]) < graph_data_record.getWorkerLoad(worker_has_data[i+1])){
+            workerID = worker_has_data[i];
           }
           worker_has_data[i] = 0;
         }
         else
           break;
       }
-      synchronized(scheduler.worker_load){
-        scheduler.worker_load[workerID] = scheduler.worker_load[workerID] + 1; 
-      }
-      synchronized(scheduler.worker_load){
-        scheduler.worker_vertex_data[workerID][vertex] = 1;
-      }
+      graph_data_record.addOneWorkerLoad(workerID);
+      graph_data_record.setData(workerID, vertex);
       info_str = info_str + " " + workerID + " 1";
       return info_str;
     }
