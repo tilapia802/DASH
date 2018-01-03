@@ -29,7 +29,7 @@ public class SendTask {
     Jedis jedis;
     jedis = pool.getResource();
 
-    BufferedReader in = new BufferedReader(new FileReader("/home/tiffanykuo/graph_testcase/change"));
+    BufferedReader in = new BufferedReader(new FileReader("/home/tiffanykuo/graph_testcase//wiki_stream/change"));
     String line = "";
     String message = "";
     String batch_message = "";

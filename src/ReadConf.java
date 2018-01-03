@@ -19,6 +19,7 @@ public class ReadConf {
     private String log_directory;
     private int batch_size;
     private int delay_time;
+    private double subgraph_ratio;
    
     public ReadConf() throws FileNotFoundException {
         JSONParser parser = new JSONParser();
@@ -33,6 +34,7 @@ public class ReadConf {
             this.log_directory = (String) jsonObject.get("LogDirectory");
             this.batch_size = Integer.parseInt((String) jsonObject.get("BatchSize"));
             this.delay_time = Integer.parseInt((String) jsonObject.get("DelayTime"));
+            this.subgraph_ratio = Double.parseDouble((String) jsonObject.get("SubgraphRatio"));
             BufferedReader in = new BufferedReader(new FileReader(this.input_filepath));
             String line;
             line = in.readLine();
@@ -74,8 +76,12 @@ public class ReadConf {
     public int getBatchSize() {
         return this.batch_size;
     } 
-    /* Return delat time */
+    /* Return delay time */
     public int getDelayTime() {
         return this.delay_time;
+    }
+    /* Return delat time */
+    public double getSubgraphRatio() {
+        return this.subgraph_ratio;
     }
 }

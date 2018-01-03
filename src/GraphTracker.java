@@ -10,25 +10,23 @@ import org.apache.commons.lang3.StringUtils;
 
 public class GraphTracker {
 
-  public static int[][] worker_data;
   ReentrantLock lock = new ReentrantLock();
-
   public static void main(String[] argv) throws Exception {
     dgps.ReadConf readconf = new dgps.ReadConf();
     dgps.Logger logger = new dgps.Logger(readconf.getLogDirectory() + "GraphTracker_log");
     dgps.MessageQueue graphtracker_message_queue = new dgps.MessageQueue();
-    
+
     logger.log("Start initial graph");
     /* Read graph topology from input file */
     String[] graph_table = initialGraph(readconf);
     logger.log("After initial graph");
     int vertex_num = readconf.getVertexNumber();  //total number of vertex
     int worker_num = readconf.getWorkerCount();
-  
-    /* Record which graph topology data worker has */
-    worker_data = new int[worker_num+1][vertex_num+1];
 
     ExecutorService executor = Executors.newFixedThreadPool(12);
+    executor.submit(new GraphTrackerTask(readconf, logger, graphtracker_message_queue, graph_table));
+    executor.submit(new GraphTrackerTask(readconf, logger, graphtracker_message_queue, graph_table));
+    executor.submit(new GraphTrackerTask(readconf, logger, graphtracker_message_queue, graph_table));
     executor.submit(new GraphTrackerTask(readconf, logger, graphtracker_message_queue, graph_table));
     executor.submit(new GraphTrackerTask(readconf, logger, graphtracker_message_queue, graph_table));
     executor.submit(new GraphTrackerTask(readconf, logger, graphtracker_message_queue, graph_table));
@@ -82,6 +80,8 @@ class GraphTrackerTask implements Runnable {
   dgps.ReadConf readconf;
   dgps.Logger logger;
   dgps.MessageQueue graphtracker_message_queue;
+  int vertex_num;
+  double subgraph_ratio;
   String[] graph_table;
   private GraphTracker graphtracker;
   
@@ -89,13 +89,18 @@ class GraphTrackerTask implements Runnable {
   Connection[] connection_worker;
   Channel[] channel_worker;
 
+  long vertex_for_worker_number[];
+
   public GraphTrackerTask(dgps.ReadConf readconf, dgps.Logger logger, dgps.MessageQueue graphtracker_message_queue, String[] graph_table)throws Exception{
     graphtracker = new GraphTracker();
     this.readconf = readconf;
     this.logger = logger;
     this.graph_table = graph_table;
     this.graphtracker_message_queue = graphtracker_message_queue;
+    this.vertex_num = readconf.getVertexNumber();
+    this.subgraph_ratio = readconf.getSubgraphRatio();
     int worker_num = readconf.getWorkerCount();
+    this.vertex_for_worker_number = new long [6];
 
     factory = new ConnectionFactory[worker_num+1];
     connection_worker = new Connection[worker_num+1];
@@ -117,13 +122,16 @@ class GraphTrackerTask implements Runnable {
     while(true){
       String message = graphtracker_message_queue.popFromQueue();
       if(!message.equals("NULL")){
+        //System.out.println("receive message " + message);
         String message_subgraph;
         int workerID = Integer.valueOf(message.substring(message.length()-1));
         int vertex_num = readconf.getVertexNumber();
 
         /* Get the vertex list that graph tracker needs to send to worker */
-        String subgraph_vertex_list = getSubgraphVertex(message, workerID, graph_table);
-        
+        String subgraph_vertex_list = getSubgraphVertex(message, workerID, graph_table, subgraph_ratio);
+        vertex_for_worker_number[workerID] += subgraph_vertex_list.length();
+        //System.out.println(String.valueOf(vertex_for_worker_number[1]) + " " + String.valueOf(vertex_for_worker_number[2]) + " " + String.valueOf(vertex_for_worker_number[3]) + " " + String.valueOf(vertex_for_worker_number[4]) + " " + String.valueOf(vertex_for_worker_number[5]));
+        //System.out.println("subgraph vertex list is " + subgraph_vertex_list);
         /* Construct subgraph message according to vertex list  */
         message_subgraph = getSubgraph(subgraph_vertex_list,graph_table,vertex_num);
 
@@ -137,16 +145,35 @@ class GraphTrackerTask implements Runnable {
     } 
   }
 
-  private String getSubgraphVertex(String message, int workerID, String[] graph_table){
-    String subgraph_vertex_list="";
-    String[] graph_table_split;
+  private String getSubgraphVertex(String message, int workerID, String[] graph_table, double subgraph_ratio){
+    String subgraph_vertex_list=""; 
    
     String [] batch_message_split = message.split(";");
+    int vertexID = 0;
+    int out_vertexID = 0;
+    String vertex_subgraph = "";
+    String vertex_subgraph_split [];
     for(int i=0;i<batch_message_split.length-1;i++){ 
       message = batch_message_split[i];
+      vertexID = Integer.valueOf(message.split(" ")[0]);
       subgraph_vertex_list = subgraph_vertex_list + message.split(" ")[0] + ",";
-    }
 
+      /*if (subgraph_ratio != 1.0){ //Larger subgraph
+        vertex_subgraph = graph_table[vertexID];
+        vertex_subgraph_split = vertex_subgraph.split(" ");
+        // Add outgoing neighbors to subgraph vertex list 
+        for (int j=0;j<vertex_subgraph_split.length;j+=2){
+          out_vertexID = Integer.valueOf(vertex_subgraph_split[j]);
+          if(graph_data_record.hasData(workerID, out_vertexID)!=1){ // The worker doesn't have this vertex data
+            // Update graph data record 
+            graph_data_record.setData(workerID, out_vertexID);
+            graph_data_record.addOneWorkerLoad(workerID);
+            subgraph_vertex_list = subgraph_vertex_list + vertex_subgraph_split[j] + ",";
+          }
+        }
+      }*/
+
+    }
     return subgraph_vertex_list; // des,des,des,des
   }
 

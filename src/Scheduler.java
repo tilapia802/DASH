@@ -13,11 +13,13 @@ public class Scheduler {
   //public static int worker_load [];
   //public static int worker_vertex_data [][];
   public static int first_message;
+  public static dgps.GraphDataRecord graph_data_record;
   public static void main(String[] argv) throws Exception {
     dgps.ReadConf readconf = new dgps.ReadConf();
     dgps.Logger logger = new dgps.Logger(readconf.getLogDirectory()+"Scheduler_log");
-    dgps.GraphDataRecord graph_data_record = new dgps.GraphDataRecord(); 
+    graph_data_record = new dgps.GraphDataRecord(); 
     graph_data_record.initData();
+
     int batch_size = readconf.getBatchSize();
     int worker_num = readconf.getWorkerCount();
     int total_vertex_num = readconf.getVertexNumber();
@@ -25,9 +27,6 @@ public class Scheduler {
 
     dgps.MessageQueue scheduler_message_queue = new dgps.MessageQueue();
     dgps.MessageQueue scheduler_message_queue_worker = new dgps.MessageQueue();
-
-    //worker_load = new int [worker_num+1]; //Record load(task count) for each worker
-    //worker_vertex_data  = new int [worker_num+1][total_vertex_num+1]; //The data that each worker has
 
     ExecutorService executor = Executors.newFixedThreadPool(5);
     executor.submit(new ReceiveMessage(readconf, logger, scheduler_message_queue));
@@ -37,7 +36,6 @@ public class Scheduler {
     //executor.submit(new MyTask(readconf, logger, scheduler_message_queue));
     
     executor.shutdown();
-
   }
 
 }

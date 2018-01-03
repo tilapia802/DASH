@@ -5,4 +5,4 @@
 #sh redis_command_gen.sh > redis_command_64w.txt
 echo 'start insert data'
 #time cat redis_command_64w.txt | redis-cli --pipe
-time cat /home/tiffanykuo/DGPS/run_script/redis/command/redis_command_64w_weight.txt | redis-cli --pipe
+time cat /home/tiffanykuo/DGPS/run_script/redis/command/redis_command_wiki.txt | redis-cli --pipe

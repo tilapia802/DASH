@@ -95,7 +95,8 @@ class WorkerTask implements Runnable {
           doWork(message,jedis,worker.graph_topology_map,workerID,logger,readconf,worker_message_queue_receive,threadId);   
           //System.out.println("local task is " + how_many_local_task);
           //System.out.println("How many batch is " + how_many_batch);
-          logger.log("[Worker] Worker " + workerID + " done doing task");
+          //logger.log("[Worker] Worker " + workerID + " done doing task");
+          //logger.log(String.valueOf(wait_time));
         }catch(Exception e){} 
       }        
     }    
@@ -133,6 +134,7 @@ class WorkerTask implements Runnable {
         jedis.set(vertexID,String.valueOf(new_distance));
 
         /* Find neighbors of this vertex */
+        long start_time = System.currentTimeMillis();
         while(true){
           //System.out.println("hi");
           synchronized(worker.graph_topology_map){
@@ -144,6 +146,8 @@ class WorkerTask implements Runnable {
           }catch (Exception e){}
           //System.out.println("waiting for " + vertexID);
         }
+        long end_time =  System.currentTimeMillis();
+        wait_time = wait_time + (end_time - start_time);
 
         synchronized(worker.graph_topology_map){
           tasklist = worker.graph_topology_map.get(vertexID);
