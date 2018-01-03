@@ -30,6 +30,8 @@ public class GraphTracker {
     executor.submit(new GraphTrackerTask(readconf, logger, graphtracker_message_queue, graph_table));
     executor.submit(new GraphTrackerTask(readconf, logger, graphtracker_message_queue, graph_table));
     executor.submit(new GraphTrackerTask(readconf, logger, graphtracker_message_queue, graph_table));
+    executor.submit(new GraphTrackerTask(readconf, logger, graphtracker_message_queue, graph_table));
+    executor.submit(new GraphTrackerTask(readconf, logger, graphtracker_message_queue, graph_table));
     
     executor.submit(new GraphTrackerReceiveMessage(readconf, logger, graphtracker_message_queue));
     

@@ -233,11 +233,15 @@ class SchedulerSendToWorker implements Runnable{
 
   String message_batch_worker [];
   String message_batch_tracker [];
-  int delay_time;
-  int batch_counter_worker [];
-  long startTime_worker [];
-  long endTime = 0;
-  long currentDelayTime_worker [];
+  int delay_time; //delay time for scheduler -> worker
+  int delay_time_graphtracker; //delay time for scheduler -> graph tracker
+  int batch_counter_worker []; //task counter for each worker
+  int batch_counter_graphtracker []; //task counter for graphtracker
+  long startTime_worker []; //start time of delay time for worker
+  long startTime_graphtracker []; //start time of delay time for graph tracker
+  long endTime = 0; //end time of delay time
+  long currentDelayTime_worker []; 
+  long currentDelayTime_graphtracker [];
   
   ConnectionFactory factory;
   Connection connection_tracker ;
@@ -260,9 +264,13 @@ class SchedulerSendToWorker implements Runnable{
       message_batch_tracker[i] = "";
     }
     batch_counter_worker = new int [worker_num+1];
+    batch_counter_graphtracker = new int [worker_num+1];
     startTime_worker = new long [worker_num+1];
+    startTime_graphtracker = new long [worker_num+1];
     currentDelayTime_worker = new long [worker_num+1];
+    currentDelayTime_graphtracker = new long [worker_num+1];
     delay_time = readconf.getDelayTime();
+    delay_time_graphtracker = delay_time / 3;
     /* Set up connection to send subgraph request to graph tracker */
     factory = new ConnectionFactory();
     factory.setHost("localhost");
@@ -300,19 +308,23 @@ class SchedulerSendToWorker implements Runnable{
       /* Get message from message queue */
       String message = scheduler_message_queue_worker.popFromQueue();
       if(!message.equals("NULL")){
-        //System.out.println("Got message");
+        /* Parse message & scheduler policy information */
         length = message.length();
         workerID = Integer.valueOf(message.substring(length-3,length-2));
         worker_has_data = message.substring(length-1);
-        //System.out.println("worker has data"+worker_has_data);
         message = message.substring(0,length-4);
-
+        /* Add message to batch */
         message_batch_worker[workerID] = message_batch_worker[workerID] + message + ";";
         batch_counter_worker[workerID] += 1;
+        /* Set start time of worker */
         if(startTime_worker[workerID] == 0)
           startTime_worker[workerID] = System.currentTimeMillis();
+        /* If worker doesn't have data */
         if(worker_has_data.equals("0")){
           message_batch_tracker[workerID] = message_batch_tracker[workerID] + message + ";"; 
+          if(startTime_graphtracker[workerID] == 0)
+            startTime_graphtracker[workerID] = System.currentTimeMillis();
+          batch_counter_graphtracker[workerID] += 1;
         }
         
         /* Check if any batch comes to batch size and send */
@@ -329,8 +341,6 @@ class SchedulerSendToWorker implements Runnable{
             //logger.log(" batch send " + message_batch_worker[workerID]);
             //count_batch = count_batch + 1;
             //logger.log("batch send count " + count_batch + " message size " + message_batch_worker[workerID].getBytes("UTF-8").length );
-            
-
           }catch(Exception e){}
           batch_counter_worker[workerID] = 0;
           message_batch_worker[workerID] = "";
@@ -340,31 +350,48 @@ class SchedulerSendToWorker implements Runnable{
           first_message = 0;
         }
       }
+      /* Check if any batch comes to delay time */
       for(int i=1;i<=worker_num;i++){
-          currentDelayTime_worker[i] = System.currentTimeMillis() - startTime_worker[i];
-          if (batch_counter_worker[i]!=0 && currentDelayTime_worker[i] >= delay_time){ //If it has message to send and comes to delay time
-            workerID = i;
-            try{
-              /* Check if it needs to send subgraph request to graph tracker */
-              if(message_batch_tracker[i].length()>0){
-                sendSubgraphRequest(message_batch_tracker[i],workerID,logger,channel_tracker);//Send subgraph request to graph tracker
-                //logger.log(" delay send " + message_batch_tracker[workerID]);
-                //logger.log("delay subgraph count " + subgraph_batch);
-              }
-              sendWork(message_batch_worker[i],workerID,logger,readconf,channel_worker); //Send task to worker 
-              //profile
-              //logger.log(" delay send " + message_batch_worker[workerID]);
-              //count_delay = count_delay + 1;
-              //logger.log("delay send count " + count_delay + " message size " + message_batch_worker[workerID].getBytes("UTF-8").length);
-            
-            }catch(Exception e){}
-            batch_counter_worker[i] = 0;
-            message_batch_worker[i] = "";
-            message_batch_tracker[i] = "";
-            currentDelayTime_worker[i] = 0;
-            startTime_worker[i] = 0;
-          }
+        currentDelayTime_worker[i] = System.currentTimeMillis() - startTime_worker[i];
+        currentDelayTime_graphtracker[i] = System.currentTimeMillis() - startTime_graphtracker[i];
+        if (batch_counter_worker[i]!=0 && currentDelayTime_worker[i] >= delay_time){ //If it has message to send and comes to delay time
+          workerID = i;
+          try{
+            /* Check if it needs to send subgraph request to graph tracker */
+            if(message_batch_tracker[i].length()>0){
+              sendSubgraphRequest(message_batch_tracker[i],workerID,logger,channel_tracker);//Send subgraph request to graph tracker
+              //logger.log(" delay send " + message_batch_tracker[workerID]);
+              //logger.log("delay subgraph count " + subgraph_batch);
+            }
+            sendWork(message_batch_worker[i],workerID,logger,readconf,channel_worker); //Send task to worker 
+            //profile
+            //logger.log(" delay send " + message_batch_worker[workerID]);
+            //count_delay = count_delay + 1;
+            //logger.log("delay send count " + count_delay + " message size " + message_batch_worker[workerID].getBytes("UTF-8").length);
+          
+          }catch(Exception e){}
+          batch_counter_worker[i] = 0;
+          batch_counter_graphtracker[i] = 0;
+          message_batch_worker[i] = "";
+          message_batch_tracker[i] = "";
+          currentDelayTime_worker[i] = 0;
+          currentDelayTime_graphtracker[i] = 0;
+          startTime_worker[i] = 0;
+          startTime_graphtracker[i] = 0;
         }
+        if (batch_counter_graphtracker[i]!=0 && currentDelayTime_graphtracker[i] >= delay_time_graphtracker){ //If it has message to send and comes to delay time
+          workerID = i;
+          try{
+            sendSubgraphRequest(message_batch_tracker[i],workerID,logger,channel_tracker);//Send subgraph request to graph tracker
+          }catch(Exception e){}
+          message_batch_tracker[i] = "";
+          batch_counter_graphtracker[i] = 0;
+          currentDelayTime_graphtracker[i] = 0;
+          startTime_graphtracker[i] = 0;
+        }
+      }
+
+
 
     }
 

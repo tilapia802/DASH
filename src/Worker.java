@@ -46,7 +46,10 @@ public class Worker {
     executor.submit(new WorkerTask(readconf, logger, worker_message_queue, worker_message_queue_receive, argv[0], pool));
     executor.submit(new WorkerTask(readconf, logger, worker_message_queue, worker_message_queue_receive, argv[0], pool));
     executor.submit(new WorkerTask(readconf, logger, worker_message_queue, worker_message_queue_receive, argv[0], pool));     
+    executor.submit(new WorkerTask(readconf, logger, worker_message_queue, worker_message_queue_receive, argv[0], pool));     
+    executor.submit(new WorkerTask(readconf, logger, worker_message_queue, worker_message_queue_receive, argv[0], pool)); 
     //executor.submit(new WorkerTask(readconf, logger, worker_message_queue, worker_message_queue_receive, argv[0], pool));     
+    //executor.submit(new WorkerTask(readconf, logger, worker_message_queue, worker_message_queue_receive, argv[0], pool)); 
     /* Thread that receive subgraph information */
     executor.submit(new WorkerReceiveSubgraphTask(readconf, logger, argv[0], pool));
     /* Thread that send task to Scheduler */
