@@ -299,7 +299,7 @@ class WorkerSendToScheduler implements Runnable{
   @Override
   public void run(){
     int delay_time = readconf.getDelayTime();
-    String message_batch = "";
+    StringBuilder message_batch = new StringBuilder("");
     int batch_counter = 0;
     long startTime = 0;
     long endTime = 0;
@@ -313,14 +313,15 @@ class WorkerSendToScheduler implements Runnable{
 
       if (!message.equals("NULL")){
         batch_counter = batch_counter + 1;
-        message_batch = message_batch  + message + ";";
+        message_batch = message_batch.append(message).append(";");
         startTime = System.currentTimeMillis();
         if (batch_counter >= batch_size || first == 1){
           try{
-            channel.basicPublish("", "schedule_queue", MessageProperties.PERSISTENT_TEXT_PLAIN, message_batch.getBytes("UTF-8"));
+            channel.basicPublish("", "schedule_queue", MessageProperties.PERSISTENT_TEXT_PLAIN, message_batch.toString().getBytes("UTF-8"));
             //logger.log("batch " + message_batch);
             batch_counter = 0;
-            message_batch = "";
+            message_batch.setLength(0);
+            message_batch.append("");
             currentDelayTime = 0;
             startTime = 0;
             first = 0;
@@ -330,10 +331,11 @@ class WorkerSendToScheduler implements Runnable{
       }
       else if (batch_counter!=0 && currentDelayTime >= delay_time){
         try{
-            channel.basicPublish("", "schedule_queue", MessageProperties.PERSISTENT_TEXT_PLAIN, message_batch.getBytes("UTF-8"));
+            channel.basicPublish("", "schedule_queue", MessageProperties.PERSISTENT_TEXT_PLAIN, message_batch.toString().getBytes("UTF-8"));
             //logger.log("delay: " + message_batch);
             batch_counter = 0;
-            message_batch = "";
+            message_batch.setLength(0);
+            message_batch.append("");
             currentDelayTime = 0;
             startTime = 0;
           }

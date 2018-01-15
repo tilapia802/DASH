@@ -29,10 +29,10 @@ public class SendTask {
     Jedis jedis;
     jedis = pool.getResource();
 
-    BufferedReader in = new BufferedReader(new FileReader("/home/tiffanykuo/graph_testcase//wiki_stream/change"));
+    BufferedReader in = new BufferedReader(new FileReader("/home/tiffanykuo/graph_testcase/wiki_stream/change"));
     String line = "";
     String message = "";
-    String batch_message = "";
+    StringBuilder batch_message = new StringBuilder("");
     int count = 0;
     while((line = in.readLine()) != null){
         int old_state = Integer.valueOf(jedis.get(line.split(" ")[2]));
@@ -43,14 +43,14 @@ public class SendTask {
             new_distance = old_state + Integer.valueOf(line.split(" ")[4]);
 
         message = line.split(" ")[3] + " " + String.valueOf(new_distance) + ";";   
-        batch_message = batch_message + message;
+        batch_message = batch_message.append(message);
         count = count + 1;
 	if (count % 10000 == 0)
 		System.out.println(count);
         //System.out.println("send " + message);
         //channel.basicPublish("", TASK_QUEUE_NAME, MessageProperties.PERSISTENT_TEXT_PLAIN, message.getBytes("UTF-8"));
     }
-    channel.basicPublish("", TASK_QUEUE_NAME, MessageProperties.PERSISTENT_TEXT_PLAIN, batch_message.getBytes("UTF-8"));
+    channel.basicPublish("", TASK_QUEUE_NAME, MessageProperties.PERSISTENT_TEXT_PLAIN, batch_message.toString().getBytes("UTF-8"));
     System.out.println("[SendTask] Sent");
     
     /* Send out the message */

@@ -18,7 +18,7 @@ public class GraphTracker {
 
     logger.log("Start initial graph");
     /* Read graph topology from input file */
-    String[] graph_table = initialGraph(readconf);
+    StringBuilder[] graph_table = initialGraph(readconf);
     logger.log("After initial graph");
     int vertex_num = readconf.getVertexNumber();  //total number of vertex
     int worker_num = readconf.getWorkerCount();
@@ -39,16 +39,16 @@ public class GraphTracker {
   
   }
 
-  private static String[] initialGraph(dgps.ReadConf readconf) throws IOException{
+  private static StringBuilder[] initialGraph(dgps.ReadConf readconf) throws IOException{
     BufferedReader in = new BufferedReader(new FileReader(readconf.getInputFilepath()));
     String line;
     line = in.readLine();
     int vertex_num = readconf.getVertexNumber();
     int edge_num = readconf.getEdgeNumber();
 
-    String[] graph_table = new String[vertex_num+1];
+    StringBuilder[] graph_table = new StringBuilder[vertex_num+1];
     for (int i=0;i<vertex_num+1;i++){
-      graph_table[i] = "null"; 
+      graph_table[i] = new StringBuilder(""); 
     }
     System.out.println("after initilization");
     String des = "";
@@ -63,13 +63,13 @@ public class GraphTracker {
       
       //For twitter
       if(line.length()==src_end){
-        graph_table[src] = "";
+        graph_table[src].append("");
         count = count + 1;
         continue;
       }
       
       des = line.substring(src_end+1,line.length());
-      graph_table[src] = des;
+      graph_table[src].append(des);
       count = count + 1;
       
     }
@@ -84,7 +84,7 @@ class GraphTrackerTask implements Runnable {
   dgps.MessageQueue graphtracker_message_queue;
   int vertex_num;
   double subgraph_ratio;
-  String[] graph_table;
+  StringBuilder[] graph_table;
   private GraphTracker graphtracker;
   
   ConnectionFactory[] factory;  
@@ -93,7 +93,7 @@ class GraphTrackerTask implements Runnable {
 
   long vertex_for_worker_number[];
 
-  public GraphTrackerTask(dgps.ReadConf readconf, dgps.Logger logger, dgps.MessageQueue graphtracker_message_queue, String[] graph_table)throws Exception{
+  public GraphTrackerTask(dgps.ReadConf readconf, dgps.Logger logger, dgps.MessageQueue graphtracker_message_queue, StringBuilder[] graph_table)throws Exception{
     graphtracker = new GraphTracker();
     this.readconf = readconf;
     this.logger = logger;
@@ -131,7 +131,7 @@ class GraphTrackerTask implements Runnable {
 
         /* Get the vertex list that graph tracker needs to send to worker */
         String subgraph_vertex_list = getSubgraphVertex(message, workerID, graph_table, subgraph_ratio);
-        vertex_for_worker_number[workerID] += subgraph_vertex_list.length();
+        //vertex_for_worker_number[workerID] += subgraph_vertex_list.length();
         //System.out.println(String.valueOf(vertex_for_worker_number[1]) + " " + String.valueOf(vertex_for_worker_number[2]) + " " + String.valueOf(vertex_for_worker_number[3]) + " " + String.valueOf(vertex_for_worker_number[4]) + " " + String.valueOf(vertex_for_worker_number[5]));
         //System.out.println("subgraph vertex list is " + subgraph_vertex_list);
         /* Construct subgraph message according to vertex list  */
@@ -147,8 +147,8 @@ class GraphTrackerTask implements Runnable {
     } 
   }
 
-  private String getSubgraphVertex(String message, int workerID, String[] graph_table, double subgraph_ratio){
-    String subgraph_vertex_list=""; 
+  private String getSubgraphVertex(String message, int workerID, StringBuilder[] graph_table, double subgraph_ratio){
+    StringBuilder subgraph_vertex_list= new StringBuilder(""); 
    
     String [] batch_message_split = message.split(";");
     int vertexID = 0;
@@ -158,7 +158,7 @@ class GraphTrackerTask implements Runnable {
     for(int i=0;i<batch_message_split.length-1;i++){ 
       message = batch_message_split[i];
       vertexID = Integer.valueOf(message.split(" ")[0]);
-      subgraph_vertex_list = subgraph_vertex_list + message.split(" ")[0] + ",";
+      subgraph_vertex_list = subgraph_vertex_list.append(message.split(" ")[0]).append(",");
 
       /*if (subgraph_ratio != 1.0){ //Larger subgraph
         vertex_subgraph = graph_table[vertexID];
@@ -176,40 +176,41 @@ class GraphTrackerTask implements Runnable {
       }*/
 
     }
-    return subgraph_vertex_list; // des,des,des,des
+    return subgraph_vertex_list.toString(); // des,des,des,des
   }
 
-  private String getSubgraph(String subgraph_vertex_list, String[] graph_table, int vertex_num) {
+  private String getSubgraph(String subgraph_vertex_list, StringBuilder[] graph_table, int vertex_num) {
     if (subgraph_vertex_list.equals("")){
       return "";
     }
     String[] subgraph_vertex_list_split = subgraph_vertex_list.split(","); //我要誰的vertex資訊 //src,des,des,des
     int senderID = 0;
     int vertexID = 0;
-    String message_subgraph = ""; //src,out1:weight,out2:weight, src2,out1:weight,out:weight
+    StringBuilder message_subgraph = new StringBuilder(""); //src,out1:weight,out2:weight, src2,out1:weight,out:weight
     
     //String meta_data = StringUtils.repeat("1", 10);
     //System.out.println("meta data is " + meta_data);
     //try{
       //System.out.println("meta data size is " + meta_data.getBytes("UTF-8").length);
     //}catch (Exception e){}
-    String vertex_subgraph;
+    StringBuilder vertex_subgraph = new StringBuilder("");
     for (int i=0;i<subgraph_vertex_list_split.length;i++){
       //String[] graph_table_split = graph_table[Integer.valueOf(subgraph_vertex_list_split[i])].split(" "); //outgoing neighbors有誰
-      vertex_subgraph = ""; //String of each vertex subgraph in vertex list
+      vertex_subgraph.setLength(0);
+      vertex_subgraph.append(""); //String of each vertex subgraph in vertex list
       //for (int j=0;j<graph_table_split.length;j++){
         //vertex_subgraph = vertex_subgraph + graph_table_split[j] + ":1,";
       //} 
       //vertex_subgraph = subgraph_vertex_list_split[i] + "," + vertex_subgraph; //src,vertex_subgraph
-      vertex_subgraph = vertex_subgraph + subgraph_vertex_list_split[i] + " ";  
-      vertex_subgraph = vertex_subgraph + graph_table[Integer.valueOf(subgraph_vertex_list_split[i])] + ","; //out1 weight1 out2 weight2,
+      vertex_subgraph = vertex_subgraph.append(subgraph_vertex_list_split[i]).append(" ");  
+      vertex_subgraph = vertex_subgraph.append(graph_table[Integer.valueOf(subgraph_vertex_list_split[i])]).append(","); //out1 weight1 out2 weight2,
       //System.out.println("subgraph of vertex " + subgraph_vertex_list_split[i] + " is " + vertex_subgraph);
       //Add meta data
       //vertex_subgraph = vertex_subgraph + meta_data + ",";
 
-      message_subgraph = message_subgraph + vertex_subgraph;
+      message_subgraph = message_subgraph.append(vertex_subgraph);
     }
-    return message_subgraph;
+    return message_subgraph.toString();
   }
   private void sendtoWorker(String message, int workerID, dgps.Logger logger, dgps.ReadConf readconf, Channel[] channel_worker) throws Exception {
     String key = "worker" + String.valueOf(workerID); //routing key
