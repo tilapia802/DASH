@@ -110,7 +110,7 @@ class WorkerTask implements Runnable {
     String vertexID = "";
     String new_distance = "";
     String [] message_split;
-    String [] message_batch_split = message.split(";");
+    //String [] message_batch_split = message.split(";");
    
     int i;
     String tasklist;
@@ -119,11 +119,11 @@ class WorkerTask implements Runnable {
     //tasklist[1] = "";
     String new_message = "";
     boolean local_task = false;
-    for(int j=0;j<message_batch_split.length;j++){
+    //for(int j=0;j<message_batch_split.length;j++){
       //System.out.println("message batch split is " + message_batch_split[j]);
-      how_many_batch = how_many_batch + 1;
+      //how_many_batch = how_many_batch + 1;
       //System.out.println("How many batch is " + how_many_batch);
-      message_split = message_batch_split[j].split(" ");
+      message_split = message.split(" ");
       vertexID = message_split[0];
       //logger.log("vertexID is " + vertexID);
       new_distance = message_split[1];       
@@ -156,7 +156,7 @@ class WorkerTask implements Runnable {
           tasklist = worker.graph_topology_map.get(vertexID);
         }
         if(tasklist.equals("")){ //has no outgoing neighbors
-          continue;
+          return;
         }
         String [] tasklist_split = tasklist.split(" ");
         for (i=0;i<tasklist_split.length;i+=2){
@@ -177,7 +177,7 @@ class WorkerTask implements Runnable {
           }
         }
       }   
-    }
+    //}
   }  
 
 };
@@ -385,7 +385,10 @@ class WorkerReceiveMessage implements Runnable {
         String message = new String(body, "UTF-8");
         //logger.log("[Worker] Worker " + workerID + " received task " + message);
         try{ 
-          worker_message_queue_receive.pushToQueue(message);
+          String [] message_split = message.split(";");
+          for (int i=0;i<message_split.length;i++){
+            worker_message_queue_receive.pushToQueue(message_split[i]);
+          }
         }
         catch(Exception e){}
       }
