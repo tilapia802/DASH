@@ -28,8 +28,12 @@ public class Scheduler {
     dgps.MessageQueue scheduler_message_queue = new dgps.MessageQueue();
     dgps.MessageQueue scheduler_message_queue_worker = new dgps.MessageQueue();
 
-    ExecutorService executor = Executors.newFixedThreadPool(5);
+    ExecutorService executor = Executors.newFixedThreadPool(12);
     executor.submit(new ReceiveMessage(readconf, logger, scheduler_message_queue));
+    executor.submit(new MyTask(worker_num, scheduler_message_queue, scheduler_message_queue_worker, graph_data_record));
+    executor.submit(new MyTask(worker_num, scheduler_message_queue, scheduler_message_queue_worker, graph_data_record));
+    executor.submit(new MyTask(worker_num, scheduler_message_queue, scheduler_message_queue_worker, graph_data_record));
+    executor.submit(new MyTask(worker_num, scheduler_message_queue, scheduler_message_queue_worker, graph_data_record));
     executor.submit(new MyTask(worker_num, scheduler_message_queue, scheduler_message_queue_worker, graph_data_record));
     executor.submit(new MyTask(worker_num, scheduler_message_queue, scheduler_message_queue_worker, graph_data_record));
     executor.submit(new SchedulerSendToWorker(readconf, logger, scheduler_message_queue_worker));
