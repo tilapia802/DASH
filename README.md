@@ -23,15 +23,15 @@ vim DASH.conf
 4. InputFilePath : Path of input graph file.
 5. LogDirectory : Directory of log file.
 6. BatchSize : Size of message in a batch, 1600 is used as default.
-7. DelayTime : Time for delay of message sending (ms), 50 is used as default.
-**Input File Format**
-src (vertex_value) des1 edge_value1 des1 edge_value2
-We provide some sample testcase under sample_testcase directory.
-**Execution commend**
-You can find running scripts under run_script directory.
-***Result*
-```javascript=
-sh run_script/runRedis.sh result > result
+7. DelayTime : Time for delay of message sending (ms), 50 is used as default.       
+**Input File Format**         
+src (vertex_value) des1 edge_value1 des1 edge_value2               
+We provide some sample testcase under sample_testcase directory.             
+**Execution commend**                 
+You can find running scripts under run_script directory.                  
+**Result**                
+```javascript=                  
+sh run_script/runRedis.sh result > result                 
 ```
 ## Programming API
 We provide API for programmer to implement their algorithms.
