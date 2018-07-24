@@ -1,4 +1,4 @@
-package dgps;
+package DASH;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.BufferedReader;
@@ -24,7 +24,7 @@ public class ReadConf {
     public ReadConf() throws FileNotFoundException {
         JSONParser parser = new JSONParser();
         try {
-            Object obj = parser.parse(new FileReader("/home/tiffanykuo/DGPS/dgps.conf"));
+            Object obj = parser.parse(new FileReader("DASH.conf"));
             JSONObject jsonObject = (JSONObject) obj;
             this.master_hostname = (String) jsonObject.get("MasterHostname");
             this.worker_count = Integer.parseInt((String) jsonObject.get("WorkerNumber"));
@@ -34,7 +34,7 @@ public class ReadConf {
             this.log_directory = (String) jsonObject.get("LogDirectory");
             this.batch_size = Integer.parseInt((String) jsonObject.get("BatchSize"));
             this.delay_time = Integer.parseInt((String) jsonObject.get("DelayTime"));
-            this.subgraph_ratio = Double.parseDouble((String) jsonObject.get("SubgraphRatio"));
+            //this.subgraph_ratio = Double.parseDouble((String) jsonObject.get("SubgraphRatio"));
             BufferedReader in = new BufferedReader(new FileReader(this.input_filepath));
             String line;
             line = in.readLine();
@@ -79,9 +79,5 @@ public class ReadConf {
     /* Return delay time */
     public int getDelayTime() {
         return this.delay_time;
-    }
-    /* Return delat time */
-    public double getSubgraphRatio() {
-        return this.subgraph_ratio;
     }
 }

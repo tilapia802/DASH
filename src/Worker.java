@@ -1,4 +1,4 @@
-package dgps;
+package DASH;
 import com.rabbitmq.client.*;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
@@ -17,10 +17,10 @@ public class Worker {
   public static Map<String, String> graph_topology_map;
   StampedLock lock = new StampedLock();
   public static void main(String[] argv) throws Exception {
-    dgps.ReadConf readconf = new dgps.ReadConf();
-    dgps.Logger logger = new dgps.Logger(readconf.getLogDirectory() + "Worker" + String.valueOf(argv[0]) + "_log");
-    dgps.MessageQueue worker_message_queue = new dgps.MessageQueue();
-    dgps.MessageQueue worker_message_queue_receive = new dgps.MessageQueue();
+    DASH.ReadConf readconf = new DASH.ReadConf();
+    DASH.Logger logger = new DASH.Logger(readconf.getLogDirectory() + "Worker" + String.valueOf(argv[0]) + "_log");
+    DASH.MessageQueue worker_message_queue = new DASH.MessageQueue();
+    DASH.MessageQueue worker_message_queue_receive = new DASH.MessageQueue();
     
     /* Error handling: user doesn't give argument (workerID) */
     if (argv.length < 1){
@@ -62,10 +62,10 @@ public class Worker {
 
 }
 class WorkerTask implements Runnable {
-  dgps.ReadConf readconf;
-  dgps.Logger logger;
-  dgps.MessageQueue worker_message_queue;
-  dgps.MessageQueue worker_message_queue_receive;
+  DASH.ReadConf readconf;
+  DASH.Logger logger;
+  DASH.MessageQueue worker_message_queue;
+  DASH.MessageQueue worker_message_queue_receive;
   private static Worker worker;
   String workerID;
   Jedis jedis;
@@ -75,7 +75,7 @@ class WorkerTask implements Runnable {
   int how_many_local_task = 0;
   long wait_time = 0;
   long message_timet = 0;
-  public WorkerTask(dgps.ReadConf readconf, dgps.Logger logger, dgps.MessageQueue worker_message_queue, dgps.MessageQueue worker_message_queue_receive, String workerID, JedisPool pool)throws Exception{
+  public WorkerTask(DASH.ReadConf readconf, DASH.Logger logger, DASH.MessageQueue worker_message_queue, DASH.MessageQueue worker_message_queue_receive, String workerID, JedisPool pool)throws Exception{
     worker = new Worker();
     this.workerID = workerID;
     this.readconf = readconf;
@@ -105,7 +105,7 @@ class WorkerTask implements Runnable {
     }    
   }
 
-  private void doWork(String message, Jedis jedis, Map<String, String> graph_topology_map, String workerID, dgps.Logger logger, dgps.ReadConf readconf, dgps.MessageQueue worker_message_queue_receive, long threadId)throws Exception {
+  private void doWork(String message, Jedis jedis, Map<String, String> graph_topology_map, String workerID, DASH.Logger logger, DASH.ReadConf readconf, DASH.MessageQueue worker_message_queue_receive, long threadId)throws Exception {
     /* Parse message from scheduler */
     String vertexID = "";
     String new_distance = "";
@@ -186,14 +186,14 @@ class WorkerReceiveSubgraphTask implements Runnable {
   ConnectionFactory factory_receiveSubgraph;
   Connection connection_receiveSubgraph;
   Channel channel_receiveSubgraph;
-  dgps.ReadConf readconf;
-  dgps.Logger logger;
+  DASH.ReadConf readconf;
+  DASH.Logger logger;
   private static Worker worker;
   String workerID;
   Jedis jedis;
   String queueName_receiveSubgraph;
   int message_count = 0;
-  public WorkerReceiveSubgraphTask(dgps.ReadConf readconf, dgps.Logger logger, String workerID, JedisPool pool)throws Exception{
+  public WorkerReceiveSubgraphTask(DASH.ReadConf readconf, DASH.Logger logger, String workerID, JedisPool pool)throws Exception{
     worker = new Worker();
     this.readconf = readconf;
     this.jedis = pool.getResource();;
@@ -273,12 +273,12 @@ class WorkerSendToScheduler implements Runnable{
   ConnectionFactory factory;
   Connection connection;
   Channel channel;
-  dgps.ReadConf readconf;
-  dgps.Logger logger;
-  dgps.MessageQueue worker_message_queue;
+  DASH.ReadConf readconf;
+  DASH.Logger logger;
+  DASH.MessageQueue worker_message_queue;
   private static int batch_size;
   private static Worker worker;
-  public WorkerSendToScheduler(dgps.ReadConf readconf, dgps.Logger logger, dgps.MessageQueue worker_message_queue)throws Exception{
+  public WorkerSendToScheduler(DASH.ReadConf readconf, DASH.Logger logger, DASH.MessageQueue worker_message_queue)throws Exception{
     worker = new Worker();
     this.readconf = readconf;
     this.logger = logger;
@@ -349,12 +349,12 @@ class WorkerReceiveMessage implements Runnable {
   ConnectionFactory factory;
   Connection connection;
   Channel channel;
-  dgps.ReadConf readconf;
-  dgps.Logger logger;
-  dgps.MessageQueue worker_message_queue_receive;
+  DASH.ReadConf readconf;
+  DASH.Logger logger;
+  DASH.MessageQueue worker_message_queue_receive;
   String workerID;
   String queueName;
-  public WorkerReceiveMessage(dgps.ReadConf readconf, dgps.Logger logger, dgps.MessageQueue worker_message_queue_receive, String workerID)throws Exception{
+  public WorkerReceiveMessage(DASH.ReadConf readconf, DASH.Logger logger, DASH.MessageQueue worker_message_queue_receive, String workerID)throws Exception{
     this.readconf = readconf;
     this.logger = logger;
     this.worker_message_queue_receive = worker_message_queue_receive;

@@ -1,4 +1,4 @@
-package dgps;
+package DASH;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
@@ -8,13 +8,13 @@ import java.util.concurrent.Executors;
 public class RunRedis {
   public static void main(String[] argv) throws Exception{
     /* Initialization of redis */
-    dgps.ReadConf readconf = new dgps.ReadConf();
+    DASH.ReadConf readconf = new DASH.ReadConf();
     String master_hostname = readconf.getMasterHostname();
+    System.out.println(master_hostname);
     JedisPool pool = new JedisPool(master_hostname);
-    //Jedis jedis = new Jedis(master_hostname);			
-		//System.out.println("Connection to server sucessfully");
     //System.out.println("Server is running: "+jedis.ping());
     int vertex_num = readconf.getVertexNumber();
+    System.out.println(vertex_num);
     int thread_num = 16;
     ExecutorService executor = Executors.newFixedThreadPool(thread_num);
 

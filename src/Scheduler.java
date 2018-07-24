@@ -1,4 +1,4 @@
-package dgps;
+package DASH;
 import com.rabbitmq.client.*;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
@@ -13,11 +13,11 @@ public class Scheduler {
   //public static int worker_load [];
   //public static int worker_vertex_data [][];
   public static int first_message;
-  public static dgps.GraphDataRecord graph_data_record;
+  public static DASH.GraphDataRecord graph_data_record;
   public static void main(String[] argv) throws Exception {
-    dgps.ReadConf readconf = new dgps.ReadConf();
-    dgps.Logger logger = new dgps.Logger(readconf.getLogDirectory()+"Scheduler_log");
-    graph_data_record = new dgps.GraphDataRecord(); 
+    DASH.ReadConf readconf = new DASH.ReadConf();
+    DASH.Logger logger = new DASH.Logger(readconf.getLogDirectory()+"Scheduler_log");
+    graph_data_record = new DASH.GraphDataRecord(); 
     graph_data_record.initData();
 
     int batch_size = readconf.getBatchSize();
@@ -25,8 +25,8 @@ public class Scheduler {
     int total_vertex_num = readconf.getVertexNumber();
     first_message = 1;
 
-    dgps.MessageQueue scheduler_message_queue = new dgps.MessageQueue();
-    dgps.MessageQueue scheduler_message_queue_worker = new dgps.MessageQueue();
+    DASH.MessageQueue scheduler_message_queue = new DASH.MessageQueue();
+    DASH.MessageQueue scheduler_message_queue_worker = new DASH.MessageQueue();
 
     ExecutorService executor = Executors.newFixedThreadPool(12);
     executor.submit(new ReceiveMessage(readconf, logger, scheduler_message_queue));
@@ -48,9 +48,9 @@ class ReceiveMessage implements Runnable {
   ConnectionFactory factory;
   Connection connection;
   Channel channel;
-  dgps.ReadConf readconf;
-  dgps.Logger logger;
-  dgps.MessageQueue scheduler_message_queue;
+  DASH.ReadConf readconf;
+  DASH.Logger logger;
+  DASH.MessageQueue scheduler_message_queue;
   //private static MyTask scheduler_task;
   private static Scheduler scheduler;
   
@@ -58,7 +58,7 @@ class ReceiveMessage implements Runnable {
   int worker_num = 0;
   //profile
   int count = 0;
-  public ReceiveMessage(dgps.ReadConf readconf, dgps.Logger logger, dgps.MessageQueue scheduler_message_queue)throws Exception{
+  public ReceiveMessage(DASH.ReadConf readconf, DASH.Logger logger, DASH.MessageQueue scheduler_message_queue)throws Exception{
     this.scheduler = new Scheduler();
     this.readconf = readconf;
     this.worker_num = readconf.getWorkerCount();
@@ -120,12 +120,12 @@ class ReceiveMessage implements Runnable {
 };
 class MyTask implements Runnable {
   private static Scheduler scheduler;
-  dgps.MessageQueue scheduler_message_queue;
-  dgps.MessageQueue scheduler_message_queue_worker;
-  dgps.GraphDataRecord graph_data_record;
+  DASH.MessageQueue scheduler_message_queue;
+  DASH.MessageQueue scheduler_message_queue_worker;
+  DASH.GraphDataRecord graph_data_record;
   int worker_num;
   int worker_has_data []; 
-  public MyTask(int worker_num, dgps.MessageQueue scheduler_message_queue, dgps.MessageQueue scheduler_message_queue_worker, dgps.GraphDataRecord graph_data_record)throws Exception{
+  public MyTask(int worker_num, DASH.MessageQueue scheduler_message_queue, DASH.MessageQueue scheduler_message_queue_worker, DASH.GraphDataRecord graph_data_record)throws Exception{
     scheduler = new Scheduler();
     this.scheduler_message_queue = scheduler_message_queue;
     this.scheduler_message_queue_worker = scheduler_message_queue_worker;
@@ -228,12 +228,12 @@ class MyTask implements Runnable {
 };
 class SchedulerSendToWorker implements Runnable{
   private static final String EXCHANGE_NAME = "directTOworker";
-  dgps.ReadConf readconf;
-  dgps.Logger logger;
+  DASH.ReadConf readconf;
+  DASH.Logger logger;
   private int batch_size;
   private int total_vertex_num;
   int worker_num;
-  dgps.MessageQueue scheduler_message_queue_worker;
+  DASH.MessageQueue scheduler_message_queue_worker;
 
   StringBuilder message_batch_worker [];
   StringBuilder message_batch_tracker [];
@@ -254,7 +254,7 @@ class SchedulerSendToWorker implements Runnable{
   Connection[] connection_worker;
   Channel[] channel_worker;
 
-  public SchedulerSendToWorker(dgps.ReadConf readconf, dgps.Logger logger, dgps.MessageQueue scheduler_message_queue_worker)throws Exception{
+  public SchedulerSendToWorker(DASH.ReadConf readconf, DASH.Logger logger, DASH.MessageQueue scheduler_message_queue_worker)throws Exception{
     this.readconf = readconf;
     this.logger = logger;
     this.scheduler_message_queue_worker = scheduler_message_queue_worker;
@@ -405,11 +405,11 @@ class SchedulerSendToWorker implements Runnable{
     }
 
   }
-  private void sendSubgraphRequest(String message, int workerID, dgps.Logger logger, Channel channel_tracker) throws Exception {
+  private void sendSubgraphRequest(String message, int workerID, DASH.Logger logger, Channel channel_tracker) throws Exception {
     String message_tracker = message + " worker" + String.valueOf(workerID);
     channel_tracker.basicPublish("", "graphtracker_queue", MessageProperties.PERSISTENT_TEXT_PLAIN, message_tracker.getBytes("UTF-8"));
   }
-  private void sendWork(String message, int workerID, dgps.Logger logger, dgps.ReadConf readconf, Channel[] channel_worker) throws Exception {
+  private void sendWork(String message, int workerID, DASH.Logger logger, DASH.ReadConf readconf, Channel[] channel_worker) throws Exception {
     String key = "worker" + String.valueOf(workerID); //routing key
     String message_worker = message;
     channel_worker[workerID].basicPublish(EXCHANGE_NAME, key, MessageProperties.PERSISTENT_TEXT_PLAIN, message_worker.getBytes("UTF-8"));

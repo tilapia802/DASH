@@ -1,4 +1,4 @@
-package dgps;
+package DASH;
 import com.rabbitmq.client.*;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
@@ -12,9 +12,9 @@ public class GraphTracker {
 
   ReentrantLock lock = new ReentrantLock();
   public static void main(String[] argv) throws Exception {
-    dgps.ReadConf readconf = new dgps.ReadConf();
-    dgps.Logger logger = new dgps.Logger(readconf.getLogDirectory() + "GraphTracker_log");
-    dgps.MessageQueue graphtracker_message_queue = new dgps.MessageQueue();
+    DASH.ReadConf readconf = new DASH.ReadConf();
+    DASH.Logger logger = new DASH.Logger(readconf.getLogDirectory() + "GraphTracker_log");
+    DASH.MessageQueue graphtracker_message_queue = new DASH.MessageQueue();
 
     logger.log("Start initial graph");
     /* Read graph topology from input file */
@@ -39,7 +39,7 @@ public class GraphTracker {
   
   }
 
-  private static StringBuilder[] initialGraph(dgps.ReadConf readconf) throws IOException{
+  private static StringBuilder[] initialGraph(DASH.ReadConf readconf) throws IOException{
     BufferedReader in = new BufferedReader(new FileReader(readconf.getInputFilepath()));
     String line;
     line = in.readLine();
@@ -79,9 +79,9 @@ public class GraphTracker {
 }
 class GraphTrackerTask implements Runnable {
   private static final String EXCHANGE_NAME = "Tracker_directTOworker";
-  dgps.ReadConf readconf;
-  dgps.Logger logger;
-  dgps.MessageQueue graphtracker_message_queue;
+  DASH.ReadConf readconf;
+  DASH.Logger logger;
+  DASH.MessageQueue graphtracker_message_queue;
   int vertex_num;
   double subgraph_ratio;
   StringBuilder[] graph_table;
@@ -93,14 +93,14 @@ class GraphTrackerTask implements Runnable {
 
   long vertex_for_worker_number[];
 
-  public GraphTrackerTask(dgps.ReadConf readconf, dgps.Logger logger, dgps.MessageQueue graphtracker_message_queue, StringBuilder[] graph_table)throws Exception{
+  public GraphTrackerTask(DASH.ReadConf readconf, DASH.Logger logger, DASH.MessageQueue graphtracker_message_queue, StringBuilder[] graph_table)throws Exception{
     graphtracker = new GraphTracker();
     this.readconf = readconf;
     this.logger = logger;
     this.graph_table = graph_table;
     this.graphtracker_message_queue = graphtracker_message_queue;
     this.vertex_num = readconf.getVertexNumber();
-    this.subgraph_ratio = readconf.getSubgraphRatio();
+    //this.subgraph_ratio = readconf.getSubgraphRatio();
     int worker_num = readconf.getWorkerCount();
     this.vertex_for_worker_number = new long [6];
 
@@ -212,7 +212,7 @@ class GraphTrackerTask implements Runnable {
     }
     return message_subgraph.toString();
   }
-  private void sendtoWorker(String message, int workerID, dgps.Logger logger, dgps.ReadConf readconf, Channel[] channel_worker) throws Exception {
+  private void sendtoWorker(String message, int workerID, DASH.Logger logger, DASH.ReadConf readconf, Channel[] channel_worker) throws Exception {
     String key = "worker" + String.valueOf(workerID); //routing key
     String message_worker = message;
     //logger.log("send " + message_worker);
@@ -225,10 +225,10 @@ class GraphTrackerReceiveMessage implements Runnable {
   ConnectionFactory factory;
   Connection connection;
   Channel channel;
-  dgps.ReadConf readconf;
-  dgps.Logger logger;
-  dgps.MessageQueue graphtracker_message_queue;
-  public GraphTrackerReceiveMessage(dgps.ReadConf readconf, dgps.Logger logger, dgps.MessageQueue graphtracker_message_queue)throws Exception{
+  DASH.ReadConf readconf;
+  DASH.Logger logger;
+  DASH.MessageQueue graphtracker_message_queue;
+  public GraphTrackerReceiveMessage(DASH.ReadConf readconf, DASH.Logger logger, DASH.MessageQueue graphtracker_message_queue)throws Exception{
     this.readconf = readconf;
     this.logger = logger;
     this.graphtracker_message_queue = graphtracker_message_queue;

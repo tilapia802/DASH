@@ -1,14 +1,14 @@
-package dgps;
+package DASH;
 import java.io.*;
 public class GraphDataRecord{
 	private int worker_num;
 	int total_vertex_num;
 	private int worker_load [];
 	private int worker_vertex_data [][];
-	private dgps.ReadConf readconf;
+	private DASH.ReadConf readconf;
 	public GraphDataRecord(){
 		try{
-			readconf = new dgps.ReadConf();
+			readconf = new DASH.ReadConf();
 		}
 		catch (FileNotFoundException ex){
 			System.out.println(".conf file not found");

@@ -6,11 +6,12 @@ DASH uses:
 * Workload aware computing task scheduler to have more balanced load.
 * Asynchronous computing model and incremental algorithm to have faster algorithm convergence.
 ## Compile
-Make sure you have java installed in your system.      
-You can change the installtion directory in compile.sh script.
+Make sure you have Java, Redis, RabbitMQ installed in your system and in your path.      
+You can change the installtion directory in compile.sh script if you want.
 ```javascript=
 sh run_script/compile.sh
 ```
+By just executing this compile script, you will see compiled classes under class directory. 
 ## Run
 **Configuration**
 ```javascript=
@@ -23,6 +24,15 @@ vim DASH.conf
 5. LogDirectory : Directory of log file.
 6. BatchSize : Size of message in a batch, 1600 is used as default.
 7. DelayTime : Time for delay of message sending (ms), 50 is used as default.
+**Input File Format**
+src (vertex_value) des1 edge_value1 des1 edge_value2
+We provide some sample testcase under sample_testcase directory.
+**Execution commend**
+You can find running scripts under run_script directory.
+***Result*
+```javascript=
+sh run_script/runRedis.sh result > result
+```
 ## Programming API
 We provide API for programmer to implement their algorithms.
 Scheduler

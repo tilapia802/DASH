@@ -1,4 +1,4 @@
-package dgps;
+package DASH;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class MessageQueue{
