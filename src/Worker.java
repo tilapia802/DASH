@@ -224,9 +224,6 @@ class WorkerReceiveSubgraphTask implements Runnable {
           public void handleDelivery(String consumerTag, Envelope envelope,
                                      AMQP.BasicProperties properties, byte[] body) throws IOException {
             String message = new String(body, "UTF-8");
-            //message_count = message_count + message.getBytes().length;
-            //System.out.println("Message is " + message);
-            //logger.log("[Worker] Worker " + workerID + " received subgraph");
             String [] message_split = message.split(",");
             int len = message_split.length; //How many task batch
             //System.out.println("len is " + len);
@@ -247,16 +244,8 @@ class WorkerReceiveSubgraphTask implements Runnable {
                 else
                   key_len = key_len + 1;
               } 
-              //message_split_split = message_split[i].split(" ");
-              //map_key = message_split_split[0]; 
               map_key = message_split[i].substring(0,key_len);
-              //meta_data = message_split_split[message_split_split.length-1];
-              //map_value要扣掉meta data的資料
-              //Add meta data
-              //map_value = message_split[i].substring(map_key.length()+1,message_split[i].length()-(meta_data.length()+1));
-              //origin: 
               map_value = message_split[i].substring(key_len+1);
-              //change
               synchronized(worker.graph_topology_map){
                   worker.graph_topology_map.put(map_key,map_value);
               }
