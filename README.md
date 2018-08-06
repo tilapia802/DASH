@@ -24,12 +24,17 @@ vim DASH.conf
 5. LogDirectory : Directory of log file.
 6. BatchSize : Size of message in a batch, 1600 is used as default.
 7. DelayTime : Time for delay of message sending (ms), 50 is used as default.       
+
 **Input File Format**         
 src (vertex_value) des1 edge_value1 des1 edge_value2               
 We provide some sample testcase under sample_testcase directory.             
+
 **Execution commend**                 
-You can find running scripts under run_script directory.                  
-**Result**                
+Initialize value in Redis database with steps mentioned in run_script/redis/README.md.      
+You can find other running scripts under run_script directory.                  
+
+**Result**   
+TO get computing result:             
 ```javascript=                  
 sh run_script/runRedis.sh result > result                 
 ```
